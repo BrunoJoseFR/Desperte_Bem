@@ -112,7 +112,7 @@ fun AlarmScreen(context: Context) {
 
                         Toast.makeText(
                             context,
-                            "Favor abilitar exact alarms",
+                            "Favor habilitar exact alarms",
                             Toast.LENGTH_LONG
                         ).show()
 
@@ -145,7 +145,7 @@ fun AlarmScreen(context: Context) {
             }
 
         }) {
-            Text("Set Alarm")
+            Text("Salvar Alarme")
         }
     }
 }

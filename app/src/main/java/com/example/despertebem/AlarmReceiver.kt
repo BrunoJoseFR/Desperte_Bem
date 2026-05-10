@@ -6,10 +6,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 
 class AlarmReceiver : BroadcastReceiver() {
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onReceive(context: Context, intent: Intent?) {
 
         val channelId = "alarm_channel"
@@ -28,7 +31,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, channelId)
             .setContentTitle("Desperte Bem")
-            .setContentText("Wake up!")
+            .setContentText("Hora de acordar!")
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()

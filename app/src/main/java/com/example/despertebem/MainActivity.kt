@@ -112,7 +112,7 @@ fun AlarmScreen(context: Context) {
 
                         Toast.makeText(
                             context,
-                            "Please allow exact alarms",
+                            "Favor abilitar exact alarms",
                             Toast.LENGTH_LONG
                         ).show()
 
@@ -131,7 +131,7 @@ fun AlarmScreen(context: Context) {
 
                 Toast.makeText(
                     context,
-                    "Alarm set for $hour:$minute",
+                    "Alarme acionado para $hour:$minute",
                     Toast.LENGTH_SHORT
                 ).show()
 
@@ -139,7 +139,7 @@ fun AlarmScreen(context: Context) {
 
                 Toast.makeText(
                     context,
-                    "Permission denied for exact alarms",
+                    "Permissão negada para exact alarms",
                     Toast.LENGTH_LONG
                 ).show()
             }

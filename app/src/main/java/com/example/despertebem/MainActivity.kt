@@ -1,34 +1,36 @@
 package com.example.despertebem
-//imports
+
+import android.Manifest
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
+import android.content.pm.PackageManager
+import android.media.MediaRecorder
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.TimePicker
 import android.widget.Toast
+
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.activity.result.contract.ActivityResultContracts
+
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+
+import androidx.core.content.ContextCompat
+
+import java.io.File
 import java.util.Calendar
 
 class MainActivity : ComponentActivity() {
@@ -47,13 +49,42 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AlarmScreen(context: Context) {
 
-    var hour by remember { mutableStateOf(7) }
-    var minute by remember { mutableStateOf(0) }
+    var hour by remember { mutableIntStateOf(7) }
+    var minute by remember { mutableIntStateOf(0) }
+
+    var recordingStarted by remember {
+        mutableStateOf(false)
+    }
+
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission()
+        ) { granted ->
+
+            if (granted) {
+
+                recordingStarted = true
+
+            } else {
+
+                Toast.makeText(
+                    context,
+                    "Microphone permission denied",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+
+    if (recordingStarted) {
+        BlankRecordingScreen(context)
+        return
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
+
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -67,10 +98,13 @@ fun AlarmScreen(context: Context) {
 
         AndroidView(
             factory = {
+
                 TimePicker(it).apply {
+
                     setIs24HourView(true)
 
                     setOnTimeChangedListener { _, h, m ->
+
                         hour = h
                         minute = m
                     }
@@ -80,72 +114,170 @@ fun AlarmScreen(context: Context) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(onClick = {
+        Button(
 
-            val calendar = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, hour)
-                set(Calendar.MINUTE, minute)
-                set(Calendar.SECOND, 0)
-            }
+            onClick = {
 
-            if (calendar.timeInMillis < System.currentTimeMillis()) {
-                calendar.add(Calendar.DAY_OF_MONTH, 1)
-            }
+                val calendar = Calendar.getInstance().apply {
 
-            val intent = Intent(context, AlarmReceiver::class.java)
+                    set(Calendar.HOUR_OF_DAY, hour)
+                    set(Calendar.MINUTE, minute)
+                    set(Calendar.SECOND, 0)
+                }
 
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+                if (calendar.timeInMillis < System.currentTimeMillis()) {
+                    calendar.add(Calendar.DAY_OF_MONTH, 1)
+                }
 
-            val alarmManager =
-                context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                val intent =
+                    Intent(context, AlarmReceiver::class.java)
 
-            try {
+                val pendingIntent =
+                    PendingIntent.getBroadcast(
+                        context,
+                        0,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or
+                                PendingIntent.FLAG_IMMUTABLE
+                    )
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val alarmManager =
+                    context.getSystemService(
+                        Context.ALARM_SERVICE
+                    ) as AlarmManager
+
+                try {
 
                     if (!alarmManager.canScheduleExactAlarms()) {
 
                         Toast.makeText(
                             context,
-                            "Favor habilitar exact alarms",
+                            "Please allow exact alarms",
                             Toast.LENGTH_LONG
                         ).show()
 
-                        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                        context.startActivity(intent)
+                        val settingsIntent = Intent(
+                            Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                        )
+
+                        context.startActivity(settingsIntent)
 
                         return@Button
                     }
+
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        calendar.timeInMillis,
+                        pendingIntent
+                    )
+
+                    when {
+
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.RECORD_AUDIO
+                        ) == PackageManager.PERMISSION_GRANTED -> {
+
+                            recordingStarted = true
+                        }
+
+                        else -> {
+
+                            permissionLauncher.launch(
+                                Manifest.permission.RECORD_AUDIO
+                            )
+                        }
+                    }
+
+                } catch (e: Exception) {
+
+                    Toast.makeText(
+                        context,
+                        "Error: ${e.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
-
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.timeInMillis,
-                    pendingIntent
-                )
-
-                Toast.makeText(
-                    context,
-                    "Alarme acionado para $hour:$minute",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-            } catch (e: SecurityException) {
-
-                Toast.makeText(
-                    context,
-                    "Permissão negada para exact alarms",
-                    Toast.LENGTH_LONG
-                ).show()
             }
 
-        }) {
-            Text("Salvar Alarme")
+        ) {
+
+            Text("Set Alarm")
         }
     }
+}
+
+@Composable
+fun BlankRecordingScreen(context: Context) {
+
+    var recorder by remember {
+        mutableStateOf<MediaRecorder?>(null)
+    }
+
+    LaunchedEffect(Unit) {
+
+        try {
+
+            val outputFile = File(
+                context.getExternalFilesDir(null),
+                "recorded_audio.mp4"
+            )
+
+            val mediaRecorder = MediaRecorder(context)
+
+            mediaRecorder.setAudioSource(
+                MediaRecorder.AudioSource.MIC
+            )
+
+            mediaRecorder.setOutputFormat(
+                MediaRecorder.OutputFormat.MPEG_4
+            )
+
+            mediaRecorder.setAudioEncoder(
+                MediaRecorder.AudioEncoder.AAC
+            )
+
+            mediaRecorder.setOutputFile(
+                outputFile.absolutePath
+            )
+
+            mediaRecorder.prepare()
+            mediaRecorder.start()
+
+            recorder = mediaRecorder
+
+            Toast.makeText(
+                context,
+                "Recording started",
+                Toast.LENGTH_LONG
+            ).show()
+
+        } catch (e: Exception) {
+
+            Toast.makeText(
+                context,
+                "Recording failed: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    DisposableEffect(Unit) {
+
+        onDispose {
+
+            recorder?.apply {
+
+                try {
+                    stop()
+                } catch (_: Exception) {
+                }
+
+                release()
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+    )
 }

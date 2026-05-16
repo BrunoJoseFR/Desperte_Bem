@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Bundle
 import android.provider.Settings
@@ -17,19 +18,25 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.Icons
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
 import androidx.core.content.ContextCompat
 
+import kotlinx.coroutines.delay
 import java.io.File
 import java.util.Calendar
 
@@ -39,13 +46,27 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            MaterialTheme {
-                AlarmScreen(this)
+            val darkColorScheme = darkColorScheme(
+                primary = Color(0xFFD0BCFF),
+                secondary = Color(0xFFCCC2DC),
+                tertiary = Color(0xFFEFB8C8),
+                background = Color(0xFF1C1B1F),
+                surface = Color(0xFF1C1B1F),
+            )
+
+            MaterialTheme(colorScheme = darkColorScheme) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    AlarmScreen(this)
+                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmScreen(context: Context) {
 
@@ -56,17 +77,17 @@ fun AlarmScreen(context: Context) {
         mutableStateOf(false)
     }
 
+    val ambientSounds = listOf("Nenhum", "Chuva", "Ondas", "Floresta")
+    var selectedSound by remember { mutableStateOf(ambientSounds[0]) }
+    var expanded by remember { mutableStateOf(false) }
+
     val permissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission()
         ) { granted ->
-
             if (granted) {
-
                 recordingStarted = true
-
             } else {
-
                 Toast.makeText(
                     context,
                     "Microphone permission denied",
@@ -76,7 +97,7 @@ fun AlarmScreen(context: Context) {
         }
 
     if (recordingStarted) {
-        BlankRecordingScreen(context)
+        MonitoringScreen(context, selectedSound)
         return
     }
 
@@ -84,42 +105,72 @@ fun AlarmScreen(context: Context) {
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
         Text(
             text = "Desperte Bem",
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.primary
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        AndroidView(
-            factory = {
-
-                TimePicker(it).apply {
-
-                    setIs24HourView(true)
-
-                    setOnTimeChangedListener { _, h, m ->
-
-                        hour = h
-                        minute = m
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            AndroidView(
+                modifier = Modifier.padding(16.dp),
+                factory = {
+                    TimePicker(it).apply {
+                        setIs24HourView(true)
+                        setOnTimeChangedListener { _, h, m ->
+                            hour = h
+                            minute = m
+                        }
                     }
                 }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            OutlinedTextField(
+                value = "Som ambiente: $selectedSound",
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier.menuAnchor()
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                ambientSounds.forEach { sound ->
+                    DropdownMenuItem(
+                        text = { Text(sound) },
+                        onClick = {
+                            selectedSound = sound
+                            expanded = false
+                        }
+                    )
+                }
             }
-        )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             onClick = {
-
                 val calendar = Calendar.getInstance().apply {
-
                     set(Calendar.HOUR_OF_DAY, hour)
                     set(Calendar.MINUTE, minute)
                     set(Calendar.SECOND, 0)
@@ -129,39 +180,21 @@ fun AlarmScreen(context: Context) {
                     calendar.add(Calendar.DAY_OF_MONTH, 1)
                 }
 
-                val intent =
-                    Intent(context, AlarmReceiver::class.java)
+                val intent = Intent(context, AlarmReceiver::class.java)
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
 
-                val pendingIntent =
-                    PendingIntent.getBroadcast(
-                        context,
-                        0,
-                        intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or
-                                PendingIntent.FLAG_IMMUTABLE
-                    )
-
-                val alarmManager =
-                    context.getSystemService(
-                        Context.ALARM_SERVICE
-                    ) as AlarmManager
+                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
                 try {
-
                     if (!alarmManager.canScheduleExactAlarms()) {
-
-                        Toast.makeText(
-                            context,
-                            "Please allow exact alarms",
-                            Toast.LENGTH_LONG
-                        ).show()
-
-                        val settingsIntent = Intent(
-                            Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
-                        )
-
+                        Toast.makeText(context, "Please allow exact alarms", Toast.LENGTH_LONG).show()
+                        val settingsIntent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
                         context.startActivity(settingsIntent)
-
                         return@Button
                     }
 
@@ -172,112 +205,145 @@ fun AlarmScreen(context: Context) {
                     )
 
                     when {
-
                         ContextCompat.checkSelfPermission(
                             context,
                             Manifest.permission.RECORD_AUDIO
                         ) == PackageManager.PERMISSION_GRANTED -> {
-
                             recordingStarted = true
                         }
-
                         else -> {
-
-                            permissionLauncher.launch(
-                                Manifest.permission.RECORD_AUDIO
-                            )
+                            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         }
                     }
-
                 } catch (e: Exception) {
-
-                    Toast.makeText(
-                        context,
-                        "Error: ${e.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
-
         ) {
-
-            Text("Set Alarm")
+            Text("Definir Alarme e Monitorar Sono")
         }
     }
 }
 
 @Composable
-fun BlankRecordingScreen(context: Context) {
-
-    var recorder by remember {
-        mutableStateOf<MediaRecorder?>(null)
-    }
+fun MonitoringScreen(context: Context, ambientSound: String) {
+    var recorder by remember { mutableStateOf<MediaRecorder?>(null) }
+    
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse"
+    )
 
     LaunchedEffect(Unit) {
-
         try {
-
-            val outputFile = File(
-                context.getExternalFilesDir(null),
-                "recorded_audio.mp4"
-            )
-
+            val outputFile = File(context.getExternalFilesDir(null), "recorded_audio.mp4")
             val mediaRecorder = MediaRecorder(context)
-
-            mediaRecorder.setAudioSource(
-                MediaRecorder.AudioSource.MIC
-            )
-
-            mediaRecorder.setOutputFormat(
-                MediaRecorder.OutputFormat.MPEG_4
-            )
-
-            mediaRecorder.setAudioEncoder(
-                MediaRecorder.AudioEncoder.AAC
-            )
-
-            mediaRecorder.setOutputFile(
-                outputFile.absolutePath
-            )
-
+            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC)
+            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            mediaRecorder.setOutputFile(outputFile.absolutePath)
             mediaRecorder.prepare()
             mediaRecorder.start()
-
             recorder = mediaRecorder
-
-            Toast.makeText(
-                context,
-                "Recording started",
-                Toast.LENGTH_LONG
-            ).show()
-
         } catch (e: Exception) {
-
-            Toast.makeText(
-                context,
-                "Recording failed: ${e.message}",
-                Toast.LENGTH_LONG
-            ).show()
+            Toast.makeText(context, "Falha na gravação: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
     DisposableEffect(Unit) {
-
         onDispose {
-
             recorder?.apply {
-
-                try {
-                    stop()
-                } catch (_: Exception) {
-                }
-
+                try { stop() } catch (_: Exception) {}
                 release()
             }
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF0F0F14)),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(120.dp)
+                .graphicsLayer(scaleX = scale, scaleY = scale)
+                .clip(CircleShape)
+                .background(Color.Red.copy(alpha = 0.2f))
+        ) {
+            Icon(
+                imageVector = Icons.Default.Mic,
+                contentDescription = "Gravando",
+                tint = Color.Red,
+                modifier = Modifier.size(48.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(
+            text = "Monitorando seu sono...",
+            style = MaterialTheme.typography.headlineSmall,
+            color = Color.White
+        )
+        
+        Text(
+            text = "Fique tranquilo, o alarme está definido.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        if (ambientSound != "Nenhum") {
+            val soundResId = when (ambientSound) {
+                "Chuva" -> R.raw.chuva
+            //    "Ondas" -> R.raw.ondas
+            //    "Floresta" -> R.raw.floresta
+                else -> null
+            }
+
+            if (soundResId != null) {
+                Spacer(modifier = Modifier.height(48.dp))
+                Text(
+                    text = "Tocando som de $ambientSound",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+                Text(
+                    text = "Desligará automaticamente em 20 min",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.DarkGray
+                )
+
+                val mediaPlayer = remember { MediaPlayer.create(context, soundResId) }
+                
+                LaunchedEffect(Unit) {
+                    mediaPlayer?.apply {
+                        isLooping = true
+                        start()
+                        delay(20 * 60 * 1000)
+                        if (isPlaying) stop()
+                    }
+                }
+
+                DisposableEffect(Unit) {
+                    onDispose {
+                        mediaPlayer?.apply {
+                            if (isPlaying) stop()
+                            release()
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

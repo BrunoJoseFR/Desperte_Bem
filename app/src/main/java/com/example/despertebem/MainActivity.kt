@@ -11,27 +11,50 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.TimePicker
 import android.widget.Toast
-
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-
 import androidx.core.content.ContextCompat
-
+import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
+import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
+import com.patrykandpatrick.vico.compose.chart.Chart
+import com.patrykandpatrick.vico.compose.chart.line.lineChart
+import com.patrykandpatrick.vico.core.entry.entryModelOf
+import kotlinx.coroutines.delay
 import java.io.File
 import java.util.Calendar
+
+
+//Para guardar decibels gravados durante monitoramento
+data class DecibelSample(
+    val timeMillis: Long,
+    val decibels: Float
+)
 
 class MainActivity : ComponentActivity() {
 
@@ -46,14 +69,23 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+//Tela inicial
 @Composable
 fun AlarmScreen(context: Context) {
 
     var hour by remember { mutableIntStateOf(7) }
     var minute by remember { mutableIntStateOf(0) }
 
-    var recordingStarted by remember {
-        mutableStateOf(false)
+    var currentScreen by remember {
+        mutableStateOf("setup")
+    }
+
+    var targetAlarmTime by remember {
+        mutableLongStateOf(0L)
+    }
+
+    var graphSamples by remember {
+        mutableStateOf<List<DecibelSample>>(emptyList())
     }
 
     val permissionLauncher =
@@ -63,7 +95,7 @@ fun AlarmScreen(context: Context) {
 
             if (granted) {
 
-                recordingStarted = true
+                currentScreen = "recording"
 
             } else {
 
@@ -75,9 +107,39 @@ fun AlarmScreen(context: Context) {
             }
         }
 
-    if (recordingStarted) {
-        BlankRecordingScreen(context)
-        return
+    when (currentScreen) {
+
+        "recording" -> {
+
+            BlankRecordingScreen(
+                context = context,
+                targetTimeMillis = targetAlarmTime,
+
+                onFinished = {
+
+                    graphSamples = it
+                    currentScreen = "graph"
+                }
+            )
+
+            return
+        }
+
+        "graph" -> {
+
+            GraphScreen(
+
+                samples = graphSamples,
+
+                onReset = {
+
+                    graphSamples = emptyList()
+                    currentScreen = "setup"
+                }
+            )
+
+            return
+        }
     }
 
     Column(
@@ -171,6 +233,8 @@ fun AlarmScreen(context: Context) {
                         pendingIntent
                     )
 
+                    targetAlarmTime = calendar.timeInMillis
+
                     when {
 
                         ContextCompat.checkSelfPermission(
@@ -178,7 +242,7 @@ fun AlarmScreen(context: Context) {
                             Manifest.permission.RECORD_AUDIO
                         ) == PackageManager.PERMISSION_GRANTED -> {
 
-                            recordingStarted = true
+                            currentScreen = "recording"
                         }
 
                         else -> {
@@ -207,10 +271,18 @@ fun AlarmScreen(context: Context) {
 }
 
 @Composable
-fun BlankRecordingScreen(context: Context) {
+fun BlankRecordingScreen(
+    context: Context,
+    targetTimeMillis: Long,
+    onFinished: (List<DecibelSample>) -> Unit
+) {
 
     var recorder by remember {
         mutableStateOf<MediaRecorder?>(null)
+    }
+
+    val samples = remember {
+        mutableStateListOf<DecibelSample>()
     }
 
     LaunchedEffect(Unit) {
@@ -219,7 +291,7 @@ fun BlankRecordingScreen(context: Context) {
 
             val outputFile = File(
                 context.getExternalFilesDir(null),
-                "recorded_audio.mp4"
+                "recorded_audio.m4a"
             )
 
             val mediaRecorder = MediaRecorder(context)
@@ -245,11 +317,36 @@ fun BlankRecordingScreen(context: Context) {
 
             recorder = mediaRecorder
 
-            Toast.makeText(
-                context,
-                "Recording started",
-                Toast.LENGTH_LONG
-            ).show()
+            val startTime = System.currentTimeMillis()
+
+            while (System.currentTimeMillis() < targetTimeMillis) {
+
+                delay(1000)
+
+                val amplitude =
+                    mediaRecorder.maxAmplitude
+
+                val db =
+                    if (amplitude > 0) {
+                        (20 * kotlin.math.log10(
+                            amplitude.toDouble()
+                        )).toFloat()
+                    } else {
+                        0f
+                    }
+
+                samples.add(
+                    DecibelSample(
+                        System.currentTimeMillis() - startTime,
+                        db
+                    )
+                )
+            }
+
+            mediaRecorder.stop()
+            mediaRecorder.release()
+
+            onFinished(samples)
 
         } catch (e: Exception) {
 
@@ -261,23 +358,86 @@ fun BlankRecordingScreen(context: Context) {
         }
     }
 
-    DisposableEffect(Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
 
-        onDispose {
+        Button(
 
-            recorder?.apply {
+            onClick = {
 
                 try {
-                    stop()
+
+                    recorder?.stop()
+                    recorder?.release()
+
                 } catch (_: Exception) {
                 }
 
-                release()
+                onFinished(samples)
             }
+
+        ) {
+
+            Text("Skip")
         }
     }
+}
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    )
+@Composable
+fun GraphScreen(
+    samples: List<DecibelSample>,
+    onReset: () -> Unit
+) {
+
+    val entries = samples.map {
+        it.decibels
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+
+        Text(
+            text = "Noise Graph",
+            style = MaterialTheme.typography.headlineMedium
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Chart(
+
+            chart = lineChart(),
+
+            model = entryModelOf(
+                *entries.toTypedArray()
+            ),
+
+            startAxis = rememberStartAxis(),
+
+            bottomAxis = rememberBottomAxis(),
+
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+
+            onClick = {
+                onReset()
+            }
+
+        ) {
+
+            Text("New Alarm")
+        }
+    }
 }

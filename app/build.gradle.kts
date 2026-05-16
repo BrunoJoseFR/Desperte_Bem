@@ -41,4 +41,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview:1.6.7")
 
     debugImplementation("androidx.compose.ui:ui-tooling:1.6.7")
+    implementation("com.patrykandpatrick.vico:compose:1.13.1")
+    implementation("com.patrykandpatrick.vico:compose:1.13.1")
+    implementation("com.patrykandpatrick.vico:compose-m3:1.13.1")
 }

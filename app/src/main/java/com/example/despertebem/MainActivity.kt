@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AlarmScreen(this)
+                    CriarAlarme(this)
                 }
             }
         }
@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AlarmScreen(context: Context) {
+fun CriarAlarme(context: Context) {
 
     var hour by remember { mutableIntStateOf(7) }
     var minute by remember { mutableIntStateOf(0) }
@@ -90,14 +90,14 @@ fun AlarmScreen(context: Context) {
             } else {
                 Toast.makeText(
                     context,
-                    "Microphone permission denied",
+                    "Permissão do microfone negada",
                     Toast.LENGTH_LONG
                 ).show()
             }
         }
 
     if (recordingStarted) {
-        MonitoringScreen(context, selectedSound)
+        MonitorandoTela(context, selectedSound)
         return
     }
 
@@ -192,7 +192,7 @@ fun AlarmScreen(context: Context) {
 
                 try {
                     if (!alarmManager.canScheduleExactAlarms()) {
-                        Toast.makeText(context, "Please allow exact alarms", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "Por favor permita o Despertar Bem.", Toast.LENGTH_LONG).show()
                         val settingsIntent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
                         context.startActivity(settingsIntent)
                         return@Button
@@ -216,7 +216,7 @@ fun AlarmScreen(context: Context) {
                         }
                     }
                 } catch (e: Exception) {
-                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         ) {
@@ -226,7 +226,7 @@ fun AlarmScreen(context: Context) {
 }
 
 @Composable
-fun MonitoringScreen(context: Context, ambientSound: String) {
+fun MonitorandoTela(context: Context, ambientSound: String) {
     var recorder by remember { mutableStateOf<MediaRecorder?>(null) }
     
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")

@@ -6,8 +6,7 @@ plugins {
 android {
 
     namespace = "com.example.despertebem"
-
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
 
@@ -38,7 +37,12 @@ dependencies {
 
     implementation("androidx.compose.ui:ui:1.6.7")
     implementation("androidx.compose.material3:material3:1.2.1")
+    implementation("androidx.compose.material:material-icons-extended:1.6.7")
     implementation("androidx.compose.ui:ui-tooling-preview:1.6.7")
+
+    implementation(libs.vico.compose)
+    implementation(libs.vico.compose.m3)
+    implementation(libs.vico.core)
 
     debugImplementation("androidx.compose.ui:ui-tooling:1.6.7")
     implementation("com.patrykandpatrick.vico:compose:1.13.1")

@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
     <uses-permission android:name="android.permission.MediaStore.createWriteRequest"/>
 
     <application
@@ -29,6 +31,11 @@
         </activity>
         <receiver
             android:name=".AlarmReceiver"
+            android:exported="false"/>
+
+        <service
+            android:name=".AlarmService"
+            android:foregroundServiceType="mediaPlayback"
             android:exported="false"/>
     </application>
 

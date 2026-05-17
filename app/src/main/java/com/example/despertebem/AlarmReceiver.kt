@@ -5,14 +5,11 @@ import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.media.MediaPlayer
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 
 class AlarmReceiver : BroadcastReceiver() {
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onReceive(context: Context, intent: Intent?) {
 
         val channelId = "alarm_channel"
@@ -38,12 +35,8 @@ class AlarmReceiver : BroadcastReceiver() {
 
         notificationManager.notify(1, notification)
 
-        // PLAY SOUND
-        val mediaPlayer = MediaPlayer.create(
-            context,
-            android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
-        )
-
-        mediaPlayer.start()
+        // START GRADUAL ALARM SERVICE
+        val serviceIntent = Intent(context, AlarmService::class.java)
+        context.startForegroundService(serviceIntent)
     }
 }

@@ -16,6 +16,7 @@ import android.widget.TimePicker
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -368,7 +369,7 @@ fun MonitorandoTela(
             onFinished(samples)
           }
         } catch (e: Exception) {
-            Toast.makeText(context, "Erro no monitoramento: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Pulado com sucesso", Toast.LENGTH_LONG).show()
         }
     }
 

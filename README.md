@@ -1,10 +1,10 @@
 Criação por: 
-Argeu Piai
-Beatriz Macedo Mollica
-Brunna Pinheiro
-Bruno José Ferreira Ribeiro
-Ricardo H. Jr. K. Lopes
-Victoria Macedo Mollica
+* Argeu Piai
+* Beatriz Macedo Mollica
+* Brunna Pinheiro
+* Bruno José Ferreira Ribeiro
+* Ricardo H. Jr. K. Lopes
+* Victoria Macedo Mollica
 
 Desperte Bem é um aplicativo Android desenvolvido em Kotlin + Jetpack Compose que permite ao usuário:
   * definir um horário para um alarme;

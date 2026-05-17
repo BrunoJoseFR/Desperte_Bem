@@ -64,7 +64,7 @@ data class DecibelSample(
     val decibels: Float
 )
 
-private val AMBIENT_SOUNDS = listOf("Nenhum", "Chuva")
+private val AMBIENT_SOUNDS = listOf("Nenhum", "Chuva", "Ondas", "Floresta")
 private const val SNORING_THRESHOLD_DB = 50f
 
 class MainActivity : ComponentActivity() {
@@ -453,6 +453,8 @@ fun MonitorandoTela(
         if (ambientSound != "Nenhum") {
             val soundResId = when (ambientSound) {
                 "Chuva" -> R.raw.chuva
+                "Floresta" -> R.raw.floresta
+                "Ondas" -> R.raw.ondas
                 else -> null
             }
 

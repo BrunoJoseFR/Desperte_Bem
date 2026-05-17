@@ -1,97 +1,240 @@
-Criação por: 
-* Argeu Piai
-* Beatriz Macedo Mollica
-* Brunna Pinheiro
-* Bruno José Ferreira Ribeiro
-* Ricardo H. Jr. K. Lopes
-* Victoria Macedo Mollica
+# 🌙 Desperte Bem
 
-Desperte Bem é um aplicativo Android desenvolvido em Kotlin + Jetpack Compose que permite ao usuário:
-  * definir um horário para um alarme;
-  * gravar o nível de ruído ambiente até o momento do alarme;
-  * exibir uma animação de onda em tempo real durante a gravação;
-  * mostrar um gráfico final com os decibéis capturados.
-   
-O objetivo é criar um despertador inteligente que monitora o ambiente antes do alarme tocar.
-Para seu funcionamento, ele emprega as seguintes tecnologias:
-  * Kotlin;
-  * Jetpack Compose;
-  * MediaRecorder (captura de áudio);
-  * Vico Chart Library (gráficos e animação de onda);
-  * AlarmManager (agendamento de alarmes);
-  * Activity Result API (permissões).
+Aplicativo Android desenvolvido em **Kotlin + Jetpack Compose** que monitora o ruído ambiente antes do alarme tocar, exibindo uma animação sonora em tempo real e um gráfico final com os níveis de decibéis capturados.
 
-O app é composto por três telas principais:
-  1. Tela de Configuração do Alarme
-  Permite ao usuário escolher hora e minuto usando um TimePicker.
-  Fluxo:
-    * usuário escolhe o horário;
-    * o app agenda um alarme com AlarmManager;
-    * se a permissão de microfone estiver liberada, inicia a gravação;
-    * caso contrário, solicita permissão.
+---
 
-  3. Tela de Gravação (BlankRecordingScreen)
-  Durante a gravação:
-    * o app usa MediaRecorder para capturar o áudio ambiente;
-    * a cada 200 ms, lê maxAmplitude;
-    * converte amplitude em decibéis.
-   Atualiza:
-      * uma lista completa (samples);
-      * uma lista curta para animação (liveEntries).
-  A animação é exibida com kotlin, através do seguinte script:
-    Chart(
-        chart = lineChart(),
-        model = entryModelOf(*liveEntries.toTypedArray())
-    )
-  Essa é a onda animada em tempo real.
+## 📚 Índice
 
-  5. Tela de Gráfico Final (GraphScreen)
-  Após o alarme ou ao tocar em “Skip”, o app exibe:
-    * um gráfico de linha com todos os decibéis capturados;
-    * botão para reiniciar o processo.
+- [📖 Sobre o Projeto](#-sobre-o-projeto)
+- [✨ Funcionalidades](#-funcionalidades)
+- [🛠 Tecnologias Utilizadas](#-tecnologias-utilizadas)
+- [📱 Fluxo do Aplicativo](#-fluxo-do-aplicativo)
+- [🎤 Captura de Áudio](#-captura-de-áudio)
+- [🌊 Animação em Tempo Real](#-animação-em-tempo-real)
+- [⏰ Agendamento de Alarmes](#-agendamento-de-alarmes)
+- [🔐 Permissões](#-permissões)
+- [▶️ Como Executar](#️-como-executar)
+- [⚠️ Limitações](#️-limitações)
+- [🚀 Melhorias Futuras](#-melhorias-futuras)
+- [👨‍💻 Autores](#-autores)
 
-Para a captura de áudio, o app utiliza Kotlin da seguinte forma:
-  mediaRecorder.maxAmplitude
-Esse valor é convertido para decibéis:
-  20 * log10(amplitude)
-Esses valores alimentam:
-  * a animação ao vivo;
-  * o gráfico final.
+---
 
-A animação de onda em tempo real é gerada pela biblioteca Vico, atualizada a cada 200 ms.
-A lista liveEntries mantém apenas os últimos 60 valores para garantir fluidez:
-  if (liveEntries.size > 60) {
-      liveEntries.removeAt(0)
-  }
-Isso cria uma onda contínua e leve.
+## 📖 Sobre o Projeto
 
-O agendamento do alarme é configurado com:
-  alarmManager.setExactAndAllowWhileIdle(...)
-O app também verifica se o usuário permitiu alarmes exatos.
+O **Desperte Bem** foi desenvolvido com o objetivo de criar um despertador inteligente capaz de monitorar o ambiente antes do alarme tocar.
 
-Para funcionamento, o app solicita algumas permissões necessárias:
-  * RECORD_AUDIO — para capturar o som ambiente;
-  * Permissão para alarmes exatos (Android 12+).
-  
-Como Executar o Projeto
-  * abra o projeto no Android Studio;
-  * conecte um dispositivo físico (recomendado);
-  * clique em Run;
-  * defina um horário;
-  * permita o uso do microfone;
-  * observe a animação da onda durante a gravação.
+Durante o período de gravação, o aplicativo captura o ruído ambiente em tempo real, converte os valores de amplitude para decibéis e exibe uma animação contínua representando a onda sonora capturada.
 
-Limitações:
-  * o emulador Android não captura áudio real, então a onda pode ficar estática.
-  * para testar corretamente, use um celular físico.
+Ao final do processo, o usuário visualiza um gráfico completo contendo todos os níveis de ruído registrados.
 
-Arquivos Importantes
-  * MainActivity.kt — contém toda a lógica do app
-  * AlarmReceiver.kt — recebe o alarme (não enviado aqui)
-  * build.gradle.kts — inclui dependências do Compose e Vico
+---
 
-Melhorias futuras:
-  * adicionar sons personalizados para o alarme;
-  * criar histórico de gravações;
-  * exportar gráficos;
-  * detectar padrões de ruído.
+## ✨ Funcionalidades
+
+- ⏰ Configuração de horário para alarme
+- 🎤 Captura contínua de áudio ambiente
+- 🌊 Animação sonora em tempo real
+- 📈 Exibição de gráfico final dos decibéis
+- 🔔 Agendamento de alarmes exatos
+- 🔐 Solicitação automática de permissões necessárias
+
+---
+
+## 🛠 Tecnologias Utilizadas
+
+O projeto utiliza as seguintes tecnologias e bibliotecas:
+
+- **Kotlin**
+- **Jetpack Compose**
+- **MediaRecorder (captura de áudio)**
+- **Vico Chart Library (gráficos e animação de onda)**
+- **AlarmManager (agendamento de alarmes)**
+- **Activity Result API (permissões)**
+
+---
+
+## 📱 Fluxo do Aplicativo
+
+### 1️⃣ Tela de Configuração do Alarme
+
+Nesta etapa, o usuário define o horário do alarme utilizando um `TimePicker`.
+
+### Fluxo:
+- o usuário escolhe hora e minuto;
+- o aplicativo agenda o alarme com `AlarmManager`;
+- verifica permissões de áudio;
+- inicia a gravação caso permitido;
+- solicita permissões se necessário.
+
+---
+
+### 2️⃣ Tela de Gravação (`BlankRecordingScreen`)
+
+Durante a gravação:
+
+- o aplicativo utiliza `MediaRecorder` para capturar o áudio ambiente;
+- realiza leitura de amplitude a cada `200 ms`;
+- converte os valores para decibéis;
+- atualiza os dados exibidos na animação em tempo real.
+
+### Atualização dos dados:
+- `samples` → armazena todos os valores capturados;
+- `liveEntries` → mantém apenas os dados necessários para a animação.
+
+---
+
+### 🌊 Exemplo da animação em tempo real
+
+```kotlin
+Chart(
+    chart = lineChart(),
+    model = entryModelOf(*liveEntries.toTypedArray())
+)
+```
+
+O gráfico é atualizado dinamicamente, produzindo uma visualização contínua da onda sonora em tempo real.
+
+---
+
+### 3️⃣ Tela de Gráfico Final (`GraphScreen`)
+
+Ao término da gravação ou ao selecionar **Skip**, o aplicativo:
+
+- exibe um gráfico completo com todos os decibéis registrados;
+- permite reiniciar o processo de monitoramento.
+
+---
+
+## 🎤 Captura de Áudio
+
+A captura do áudio ambiente é realizada através do `MediaRecorder`:
+
+```kotlin
+mediaRecorder.maxAmplitude
+```
+
+Os valores de amplitude são convertidos para decibéis utilizando:
+
+```kotlin
+20 * log10(amplitude)
+```
+
+Esses dados alimentam:
+- a animação da onda sonora;
+- o gráfico final de ruído.
+
+---
+
+## 🌊 Animação em Tempo Real
+
+A animação sonora é gerada utilizando a biblioteca **Vico Chart Library**.
+
+Para garantir fluidez e leveza na renderização, a lista `liveEntries` mantém apenas os últimos 60 valores:
+
+```kotlin
+if (liveEntries.size > 60) {
+    liveEntries.removeAt(0)
+}
+```
+
+Esse comportamento produz uma onda contínua e responsiva durante toda a captura.
+
+---
+
+## ⏰ Agendamento de Alarmes
+
+O alarme é configurado utilizando:
+
+```kotlin
+alarmManager.setExactAndAllowWhileIdle(...)
+```
+
+O aplicativo também verifica se o usuário concedeu permissão para utilização de alarmes exatos em dispositivos Android 12+.
+
+---
+
+## 🔐 Permissões
+
+O aplicativo solicita as seguintes permissões:
+
+| Permissão | Finalidade |
+|---|---|
+| `RECORD_AUDIO` | Captura do áudio ambiente |
+| Alarmes Exatos | Agendamento preciso do alarme |
+
+---
+
+## ▶️ Como Executar
+
+### Pré-requisitos
+
+- Android Studio atualizado
+- Dispositivo Android físico (recomendado)
+
+### Passos
+
+1. Clone o repositório:
+
+```bash
+git clone https://github.com/seu-usuario/desperte-bem.git
+```
+
+2. Abra o projeto no Android Studio
+
+3. Execute o aplicativo em um dispositivo físico
+
+4. Configure um horário para o alarme
+
+5. Permita o acesso ao microfone
+
+6. Observe a animação sonora em tempo real
+
+---
+
+## ⚠️ Limitações
+
+- O emulador Android pode não capturar áudio real corretamente.
+- A animação pode permanecer estática em ambientes sem entrada de áudio.
+- Recomenda-se utilizar um dispositivo físico para testes completos.
+
+---
+
+### Arquivos Importantes
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `MainActivity.kt` | Lógica principal do aplicativo |
+| `AlarmReceiver.kt` | Recebimento do alarme |
+| `build.gradle.kts` | Dependências do Compose e Vico |
+
+---
+
+## 🚀 Melhorias Futuras
+
+- 🎵 Adicionar sons personalizados para o alarme
+- 🗂 Criar histórico de gravações
+- 📤 Exportar gráficos
+- 🤖 Detectar padrões de ruído
+- ☁️ Sincronização em nuvem
+- 📊 Estatísticas de qualidade do sono
+
+---
+
+## 👨‍💻 Autores
+
+Projeto desenvolvido por:
+
+- Argeu Piai
+- Beatriz Macedo Mollica
+- Brunna Pinheiro
+- Bruno José Ferreira Ribeiro
+- Ricardo H. Jr. K. Lopes
+- Victoria Macedo Mollica
+
+---
+
+## 📄 Licença
+
+Este projeto possui finalidade acadêmica e educacional.

@@ -22,12 +22,12 @@ O app é composto por três telas principais:
     * se a permissão de microfone estiver liberada, inicia a gravação;
     * caso contrário, solicita permissão.
 
-  2. Tela de Gravação (BlankRecordingScreen)
+  3. Tela de Gravação (BlankRecordingScreen)
   Durante a gravação:
     * o app usa MediaRecorder para capturar o áudio ambiente;
     * a cada 200 ms, lê maxAmplitude;
     * converte amplitude em decibéis.
-    Atualiza:
+   Atualiza:
       * uma lista completa (samples);
       * uma lista curta para animação (liveEntries).
   A animação é exibida com kotlin, através do seguinte script:
@@ -37,7 +37,7 @@ O app é composto por três telas principais:
     )
   Essa é a onda animada em tempo real.
 
-  3. Tela de Gráfico Final (GraphScreen)
+  5. Tela de Gráfico Final (GraphScreen)
   Após o alarme ou ao tocar em “Skip”, o app exibe:
     * um gráfico de linha com todos os decibéis capturados;
     * botão para reiniciar o processo.

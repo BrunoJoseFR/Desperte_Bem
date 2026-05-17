@@ -14,7 +14,8 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.TimePicker
 import android.widget.Toast
-
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -155,127 +156,136 @@ fun CriarAlarme(onAlarmSet: (Long, String) -> Unit) {
                 ).show()
             }
         }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
-        Text(
-            text = "Desperte Bem",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+    //imagem de background
+    Box(modifier = Modifier.fillMaxSize()) {  
+    Image(
+        painter = painterResource(id = R.drawable.background),
+        contentDescription = null,
+        modifier = Modifier.fillMaxSize(),
+        contentScale = ContentScale.Crop
+    )
+        
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            AndroidView(
-                modifier = Modifier.padding(16.dp),
-                factory = {
-                    TimePicker(it).apply {
-                        setIs24HourView(true)
-                        setOnTimeChangedListener { _, h, m ->
-                            hour = h
-                            minute = m
-                        }
-                    }
-                }
+    
+            Text(
+                text = "Desperte Bem",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary
             )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
-        ) {
-            OutlinedTextField(
-                value = "Som ambiente: $selectedSound",
-                onValueChange = {},
-                readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.menuAnchor()
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                AMBIENT_SOUNDS.forEach { sound ->
-                    DropdownMenuItem(
-                        text = { Text(sound) },
-                        onClick = {
-                            selectedSound = sound
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            onClick = {
-                val calendar = Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, hour)
-                    set(Calendar.MINUTE, minute)
-                    set(Calendar.SECOND, 0)
-                }
-
-                if (calendar.timeInMillis < System.currentTimeMillis()) {
-                    calendar.add(Calendar.DAY_OF_MONTH, 1)
-                }
-
-                val intent = Intent(context, AlarmReceiver::class.java)
-                val pendingIntent = PendingIntent.getBroadcast(
-                    context,
-                    0,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    
+            Spacer(modifier = Modifier.height(24.dp))
+    
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
-
-                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-                try {
-                    if (!alarmManager.canScheduleExactAlarms()) {
-                        Toast.makeText(context, "Por favor permita o Despertar Bem.", Toast.LENGTH_LONG).show()
-                        val settingsIntent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                        context.startActivity(settingsIntent)
-                        return@Button
-                    }
-
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        calendar.timeInMillis,
-                        pendingIntent
-                    )
-
-                    when {
-                        ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.RECORD_AUDIO
-                        ) == PackageManager.PERMISSION_GRANTED -> {
-                            onAlarmSet(calendar.timeInMillis, selectedSound)
-                        }
-                        else -> {
-                            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            ) {
+                AndroidView(
+                    modifier = Modifier.padding(16.dp),
+                    factory = {
+                        TimePicker(it).apply {
+                            setIs24HourView(true)
+                            setOnTimeChangedListener { _, h, m ->
+                                hour = h
+                                minute = m
+                            }
                         }
                     }
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                )
+            }
+    
+            Spacer(modifier = Modifier.height(24.dp))
+    
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                OutlinedTextField(
+                    value = "Som ambiente: $selectedSound",
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier.menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    AMBIENT_SOUNDS.forEach { sound ->
+                        DropdownMenuItem(
+                            text = { Text(sound) },
+                            onClick = {
+                                selectedSound = sound
+                                expanded = false
+                            }
+                        )
+                    }
                 }
             }
-        ) {
-            Text("Definir Alarme e Monitorar Sono")
+    
+            Spacer(modifier = Modifier.height(24.dp))
+    
+            Button(
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                onClick = {
+                    val calendar = Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, hour)
+                        set(Calendar.MINUTE, minute)
+                        set(Calendar.SECOND, 0)
+                    }
+    
+                    if (calendar.timeInMillis < System.currentTimeMillis()) {
+                        calendar.add(Calendar.DAY_OF_MONTH, 1)
+                    }
+    
+                    val intent = Intent(context, AlarmReceiver::class.java)
+                    val pendingIntent = PendingIntent.getBroadcast(
+                        context,
+                        0,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+    
+                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    
+                    try {
+                        if (!alarmManager.canScheduleExactAlarms()) {
+                            Toast.makeText(context, "Por favor permita o Despertar Bem.", Toast.LENGTH_LONG).show()
+                            val settingsIntent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                            context.startActivity(settingsIntent)
+                            return@Button
+                        }
+    
+                        alarmManager.setExactAndAllowWhileIdle(
+                            AlarmManager.RTC_WAKEUP,
+                            calendar.timeInMillis,
+                            pendingIntent
+                        )
+    
+                        when {
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.RECORD_AUDIO
+                            ) == PackageManager.PERMISSION_GRANTED -> {
+                                onAlarmSet(calendar.timeInMillis, selectedSound)
+                            }
+                            else -> {
+                                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            ) {
+                Text("Definir Alarme e Monitorar Sono")
+            }
         }
     }
 }

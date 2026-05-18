@@ -34,7 +34,9 @@ Ao final do processo, o usuário visualiza um gráfico completo contendo todos o
 
 ## 🎥 Vídeo de Demonstração
 
-[![Assista ao vídeo](thumbnail.png)](https://www.youtube.com/watch?v=ezKvdWh9KrM)
+<a href="https://www.youtube.com/shorts/ezKvdWh9KrM">
+  <img src="thumbnail.png" width="400">
+</a>
 
 ---
 

@@ -7,6 +7,7 @@ Aplicativo Android desenvolvido em **Kotlin + Jetpack Compose** que monitora o r
 ## 📚 Índice
 
 - [📖 Sobre o Projeto](#-sobre-o-projeto)
+- [🎥 Vídeo de Demonstração](#-vídeo-de-demonstração)
 - [✨ Funcionalidades](#-funcionalidades)
 - [🛠 Tecnologias Utilizadas](#-tecnologias-utilizadas)
 - [📱 Fluxo do Aplicativo](#-fluxo-do-aplicativo)
@@ -28,6 +29,12 @@ O **Desperte Bem** foi desenvolvido com o objetivo de criar um despertador intel
 Durante o período de gravação, o aplicativo captura o ruído ambiente em tempo real, converte os valores de amplitude para decibéis e exibe uma animação contínua representando a onda sonora capturada.
 
 Ao final do processo, o usuário visualiza um gráfico completo contendo todos os níveis de ruído registrados.
+
+---
+
+## 🎥 Vídeo de Demonstração
+
+[![Assista ao vídeo](thumbnail.png)](https://www.youtube.com/watch?v=ezKvdWh9KrM)
 
 ---
 
